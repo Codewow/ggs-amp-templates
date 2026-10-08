@@ -1,0 +1,17 @@
+[
+    {
+        "Protocol": "TCP",
+        "Port": 7777,
+        "Ref": "ControlPort",
+        "Name": "Control Panel",
+        "Description": "Golem Control's web panel (HTTP). Put it behind AMP's or your own HTTPS reverse proxy if it faces the internet."
+    },
+    {
+        "Protocol": "UDP",
+        "Port": 7778,
+        "Range": 20,
+        "Ref": "GamePorts",
+        "Name": "Game Server WebRTC",
+        "Description": "One UDP port per running game server, for players' WebRTC links (ICE UDP mux). Without these players still connect, through the site's slower relay."
+    }
+]

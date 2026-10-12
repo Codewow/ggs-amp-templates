@@ -21,7 +21,7 @@ Meta.Prerequisites=[]
 Meta.ExtraContainerPackages=[]
 Meta.ConfigReleaseState=NotSpecified
 Meta.NoCommercialUsage=False
-Meta.ConfigVersion=1
+Meta.ConfigVersion=2
 Meta.ReleaseNotes=
 Meta.BreakingReleaseNotes=
 Meta.AppConfigId=76f0f3a9-f901-4670-a85c-75411c78e9fc
@@ -38,7 +38,7 @@ App.WindowsCommandLineArgs=
 App.CommandLineArgs=server/control/index.js --port {{$ControlPort}} --host {{$ApplicationIPBinding}}
 App.UseLinuxIOREDIR=False
 App.AppSettings={}
-App.EnvironmentVariables={"PATH":"{{$FullRootDir}}node:{{$FullRootDir}}node/bin:%PATH%","GGS_SITE":"{{SiteUrl}}","GAMESERVER_SECRET":"{{GameServerSecret}}","GOLEM_UDP_BASE":"{{$GamePorts}}","GOLEM_UDP_COUNT":"{{UdpPortCount}}","GOLEM_CONTROL_DATA":"{{$FullRootDir}}data"}
+App.EnvironmentVariables={"PATH":"{{$FullRootDir}}node:{{$FullRootDir}}node/bin:%PATH%","GGS_SITE":"{{SiteUrl}}","GAMESERVER_SECRET":"{{GameServerSecret}}","GOLEM_UDP_BASE":"{{$GamePorts}}","GOLEM_UDP_COUNT":"{{UdpPortCount}}","GOLEM_CONTROL_DATA":"{{$FullRootDir}}data","CF_TURN_KEY_ID":"{{TurnKeyId}}","CF_TURN_API_TOKEN":"{{TurnToken}}"}
 App.CommandLineParameterFormat=-{0}={1}
 App.CommandLineParameterDelimiter= 
 App.ExitMethod=String

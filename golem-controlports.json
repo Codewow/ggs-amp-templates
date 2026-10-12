@@ -12,6 +12,6 @@
         "Range": 20,
         "Ref": "GamePorts",
         "Name": "Game Server WebRTC",
-        "Description": "One UDP port per running game server, for players' WebRTC links (ICE UDP mux). Without these players still connect, through the site's slower relay."
+        "Description": "Game servers' direct WebRTC links when Cloudflare TURN is off (one UDP port per server process). Only open while players are connected, so 'Not listening' here is normal. With TURN on in Golem Control's Settings, servers use other ports and TURN instead, and these aren't needed."
     }
 ]

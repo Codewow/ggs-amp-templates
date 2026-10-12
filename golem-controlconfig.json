@@ -142,5 +142,33 @@
         "IncludeInCommandLine": false,
         "DefaultValue": "20",
         "EnumValues": {}
+    },
+    {
+        "Category": "Golem Control:dns",
+        "Subcategory": "Game servers:settings:1",
+        "IsFlagArgument": false,
+        "IncludeInCommandLine": false,
+        "DefaultValue": "",
+        "EnumValues": {},
+        "DisplayName": "Cloudflare TURN Token ID",
+        "Description": "The ID of a Cloudflare Realtime TURN key. With one, a player who can't reach a server directly links to it through Cloudflare's TURN relay rather than the site's slower relay. Leave empty to set it in the panel instead.",
+        "Keywords": "turn,cloudflare,ice,relay,CF_TURN_KEY_ID",
+        "FieldName": "TurnKeyId",
+        "ParamFieldName": "TurnKeyId",
+        "InputType": "text"
+    },
+    {
+        "Category": "Golem Control:dns",
+        "Subcategory": "Game servers:settings:1",
+        "IsFlagArgument": false,
+        "IncludeInCommandLine": false,
+        "DefaultValue": "",
+        "EnumValues": {},
+        "DisplayName": "Cloudflare TURN API Token",
+        "Description": "The API token for that TURN key. Golem Control exchanges it for short-lived credentials, which only the game servers ever see; it never reaches the site or players. Leave empty to set it in the panel instead.",
+        "Keywords": "turn,cloudflare,token,CF_TURN_API_TOKEN",
+        "FieldName": "TurnToken",
+        "ParamFieldName": "TurnToken",
+        "InputType": "Password"
     }
 ]

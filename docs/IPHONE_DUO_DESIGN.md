@@ -2,7 +2,7 @@
 
 How to make a web game (or any full-screen web app) work on the **iPhone Duo**: both screens, closed and open, in Safari and as a home-screen app. Written from the Callout Golems work (gamegolemstudios, `public/games/callout-golems`, the `[duo]` comments in `css/style.css` and `js/main.js`, and `dev/games/callout-golems/tests/duotest.js`). Every number here was measured from screenshots taken on the device, not from spec sheets.
 
-> Status: version 1, from the build that shipped as v299. It will be updated after the final round (v300) with what's left.
+> Status: version 2, from the final round that shipped as Callout Golems v300 (every seat checked at every Duo size by `duotest.js`). Open questions that need a real device are in section 10.
 
 ---
 
@@ -13,7 +13,17 @@ How to make a web game (or any full-screen web app) work on the **iPhone Duo**: 
 | Inner (open) screen | 2007 x 2853 | **669 x 951** | Held sideways in the home-screen app, the layout viewport is about **866 x 587**; iOS keeps the status rail and a bottom strip outside the page. |
 | Cover (closed) screen | 1398 x 2034 | **466 x 678** | 678 x 466 held sideways. |
 
-- **Status rail.** A strip about **84 pt** wide runs down the camera edge. It holds the clock, wifi and battery, and it **never goes away**, not even in the home-screen app with `black-translucent`. `env(safe-area-inset-*)` reports it as about 84px on that side.
+- **Status rail.** A strip about **84 pt** wide runs down the camera edge. It holds the clock, wifi and battery, and it **never goes away**, not even in the home-screen app with `black-translucent`. `env(safe-area-inset-*)` reports it as about 84px on that side. Where it sits:
+  - cover screen upright: on the right;
+  - cover screen sideways, camera on the left: on the left (overpaint does fill this one);
+  - inner screen sideways: on the right, about 85pt;
+  - inner screen upright: across the top, about 81pt.
+- **Bottom strip.** In the inner screen's home-screen app there is also a strip of about 82px along the bottom, outside the page.
+- **Safari vs the app.** Safari can't give up the rail at all. Only the home-screen app runs under part of it.
+- **Insets to fake in tests** `[top, right, bottom, left]`:
+  - cover sideways: 84 on the rail side, 21 at the bottom;
+  - cover upright: `[0, 84, 34, 0]`;
+  - inner home-screen app: all 0.
 - **Hole punch.** The camera hole is at the **top of the right edge** with the closed phone held upright, just above the clock/wifi block. The punch and the clock/wifi block together are the only area UI really must avoid. The rest of the rail is usable.
 - **Turning the phone.** The punch and clock box stay in the same physical corner, so in CSS terms they move to another corner of the page. Use `screen.orientation.angle` (or `window.orientation` as a fallback) to tell which one.
 - **Folding.** There is no fold API. A fold, unfold or turn arrives only as a `resize`, sometimes a beat late, so re-measure on `resize`, `orientationchange` and `visualViewport` `resize`, and again about 250 ms later.
@@ -25,7 +35,18 @@ How to make a web game (or any full-screen web app) work on the **iPhone Duo**: 
 | Cover, sideways | `(max-height: 500px) and (orientation: landscape)` | 678 x 466 |
 | Cover, upright | `(max-width: 560px) and (orientation: portrait)` | 466 x 678 |
 | Mid (inner, sideways) | `(orientation: landscape) and (min-height: 501px) and (max-height: 700px)` | 866 x 587 |
-| Inner, upright | tablet-ish portrait | 669 x 951 |
+| Phone portrait | `(max-width: 700px) and (orientation: portrait)` | Also covers the inner screen upright, 669 x 951 |
+| Tablet | landscape, 701px+ tall | iPad; unchanged |
+
+The rules that came out of it:
+
+| Class | Layout |
+|---|---|
+| Cover, sideways | Slide menus. The vehicle button bar is one row at the bottom centre; the wheel is 132px; the dash sits at bottom 160; the hand brake at bottom 122. |
+| Cover, upright | Slide menus. The vehicle button bar is 3 columns on the right, filled from the bottom up. The right column holds the job dock at 272, the seat keys at 322 and the phone button under the minimap. |
+| Mid | Tablet layout. Go to and BOARD are anchored from the bottom beside the button bar, which keeps them clear even if the height is ±80px off. Job docks folded; pilot buttons 2x2. |
+
+The **mid class matters**. The open phone sideways (866 x 587, or 951 x 669 in Safari) falls between phone and tablet layouts, and both overlap there. Callout Golems' dispatch desk also switches to its phone layout below 760 wide or 520 tall.
 
 The cover screen held sideways is the hardest case: a phone's height with an 84px rail eating into the width. Design that first.
 
@@ -41,7 +62,9 @@ The cover screen held sideways is the hardest case: a phone's height with an 84p
 <meta name="apple-mobile-web-app-title" content="Your Game">
 <meta name="theme-color" content="#000000">
 ```
-In the manifest, set `"display": "standalone"` and `"theme_color": "#000000"`.
+In the manifest, set `"display": "standalone"` and `"theme_color": "#000000"`. `display_override` can still list `fullscreen` first for browsers that honour it.
+
+Call `requestFullscreen` on the first tap on phone-sized touch screens, and ignore it if the browser refuses. iPhone Safari refuses; other browsers may not.
 
 ```css
 html { background: #000; }           /* What WebKit paints past the page (the rail, the bottom strip): make it the bezel colour. */
@@ -69,7 +92,12 @@ html.bleed canvas#cv {
 ```
 
 - Turn it on only for the Duo: an iPhone UA with `min(screen.width, screen.height)` between 450 and 700 (not ordinary iPhones or iPads), or `?bleed=1`.
-- The renderer has to compensate. Read the canvas offset back and keep the camera centre and every projected label on the page itself, not on the bigger canvas.
+- The renderer has to compensate so the visible view is pixel-identical:
+  1. Read the offset back from the canvas's bounding rect.
+  2. Keep the logical width and height (W, H) as the page size.
+  3. Scale the projection by W / (W + 2M), where M is the margin.
+  4. Extend the sky or background to cover the full canvas.
+  5. Map `project()` results back into page pixels so labels and hit tests stay on the page.
 - **Result:** it fills the rail on the cover screen held sideways. On the cover screen upright and on the inner screen held sideways, iOS still owns the rail, so it stays black (bezel-coloured), which is acceptable.
 - `?railtest=1` turns the root background magenta. Magenta in the rail means the page can paint it. Black or green means iOS owns it.
 
@@ -99,7 +127,12 @@ The cover screen held sideways (about 590 x 466 usable) can't fit a desktop-styl
 - **Open direction:** sideways, the menu opens as a row to the left of "⋯"; upright, as a column above it. Nothing under the thumb moves when it opens.
 - **Badge:** show how many buttons are hidden, e.g. "⋯ 9".
 - **Minimum hit size:** 44 to 48 CSS px.
-- **Hooks:** a `.fan-t` toggle and `.fan-open` / `.fan-hov` classes; containers are marked `[data-fan]`. CSS shows or hides by `[data-t="X"]` key. The toggle is `display: none` outside the cover size classes, so larger screens are unchanged.
+- **How it fires:**
+  - Pressing, sliding and releasing on an item fires that item by sending it a synthetic pointerdown and pointerup.
+  - A tap with no slide only opens the menu.
+  - A real pointerdown anywhere else closes it at once. **Don't use timers** for this; long frames delay them.
+- **Nothing moves under the thumb:** the bar is `display: flex; flex-wrap: wrap-reverse`, and the always-visible items plus "⋯" get `order: -1`. Opened items then go on above.
+- **Hooks:** a `.fan-t` toggle and `.fan-open` / `.fan-hov` classes; containers are marked `[data-fan]`. Job docks use `.cmp`, `.fold` and `.open`, plus `[data-jmore]` for the "⋯ N" button. CSS shows or hides by `[data-t="X"]` key. The toggle is `display: none` outside the cover size classes, so larger screens are unchanged.
 - **Long tool rows** (for example air traffic control's tools): show the first tool plus "⋯ N", and open the rest as a column of buttons at least 44pt tall. Don't let a row of truncated pills ("RAD…", "GRO…") cover the scene.
 
 ## 7. Per-size layout rules that came up
@@ -126,9 +159,19 @@ Desktop tests miss most of this. Test like the phone:
 6. **Overpaint:** use `?bleed=1` to force it on and `?bleed=0` to force it off.
 7. **Overlap check:** collect the bounding rects of the visible HUD elements and assert that none overlap each other or the keep-out box, for every seat or screen in the game.
 8. **Smoke test before every release:** load the page with the iPhone UA at 866x587 and 678x466 and confirm it reaches the title with no errors.
-9. **Release:** bump the service worker cache version on every release. Players on the home-screen app keep the old build until the worker updates, so tell testers to close the app fully and reopen it, twice if needed.
+9. **Release:** bump the service worker cache version on every release. A network-first worker isn't what keeps an old layout on screen, because its cache only answers offline. iOS's HTTP cache or a page left open is the usual cause, so tell testers to close the app fully and reopen it.
 
-Reference test: `dev/games/callout-golems/tests/duotest.js` (Playwright, iPhone UA, every seat at every size).
+Reference test: `dev/games/callout-golems/tests/duotest.js`.
+- Playwright with the iPhone UA, `deviceScaleFactor: 3`, `isMobile` and `hasTouch`.
+- For every view at every size it checks that:
+  - the canvas covers the viewport;
+  - nothing crosses the page edge, the faked safe area or the keep-out box;
+  - no two controls overlap, and no HUD panel covers a control;
+  - the slide menu opens and fires;
+  - the overpaint projection lines up.
+- Usage: `node dev/games/callout-golems/tests/duotest.js [view ...] [size:<name> ...]` with the repo served on port 8360. `OUT=` sets the screenshot folder; `NOSHOT=1` skips screenshots.
+- Other flags: `?touch=1` forces the touch controls, and `?nosw=1` skips the service worker.
+- iPhone UA used: `Mozilla/5.0 (iPhone; CPU iPhone OS 26_0 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/26.0 Mobile/15E148 Safari/604.1`.
 
 ## 9. Checklist for a new game
 
@@ -142,3 +185,12 @@ Reference test: `dev/games/callout-golems/tests/duotest.js` (Playwright, iPhone 
 - [ ] `window.screen`, never a bare `screen`
 - [ ] iPhone-UA Playwright test that fails on page errors, at every size
 - [ ] Service worker version bumped on release
+
+## 10. Open questions (need a real device)
+
+- **Overpaint reach:** it fills the rail on the cover screen held sideways. On the cover screen upright and the inner screen sideways, the rail looks owned by iOS. Confirm with `?railtest=1`.
+- **Keep-out box position:** the box is estimated from where the clock sits. The inner screen's punch position is not measured yet. Calibrate it from a device screenshot with `?cut=x,y,w,h`.
+- **Rotation corner:** which corner `screen.orientation.angle` picks on the cover screen hasn't been checked on a device.
+- **Fullscreen:** whether the Duo's Safari supports `requestFullscreen` is unknown.
+- **Very narrow Safari portrait (382px wide):** this is the densest layout. In Callout Golems, the truck cab's BOARD and phone buttons still overlap by 18px there.
+- **Leftover vh:** some `max-height` rules still use vh. That's safe, because it can only come out shorter than the screen, but `%` is better.
